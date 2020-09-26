@@ -44,7 +44,7 @@ abi = json.loads('[{"constant":true,"inputs":[],"name":"getAvailableEnergy","out
 # contract should appear. Click on the "Copy value to clipboard" button and
 #paste it to the argument of the function below.
 #address:
-address = web3.toChecksumAddress("0xB97D33fA6059faDe2482f713865ECF5088569f07")
+address = web3.toChecksumAddress("0x2cA401e6fC730996AAa25b122E2B1833dEFA53f4")
 
 #Compile the Information related to the smart contract together.
 contract = web3.eth.contract(address = address, abi = abi, bytecode = bytecode)
