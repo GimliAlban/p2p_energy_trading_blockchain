@@ -12,9 +12,9 @@ contract p2p {
     int numberOfConsumers;
     int numberOfProsumers;
 
-    uint maxBalanceForThisCycle;
+    int maxBalanceForThisCycle;
 
-    event MyEvent(uint value);
+    event MyEvent(int value);
     event Message(string message);
 
     // This is a special function called the fallback.
@@ -35,19 +35,17 @@ contract p2p {
     }
 
     function updateEnergy(int _newEnergy, int _pastEnergy) public {
-
         if(_newEnergy < 0){ //Consumer case
-
+            if(numberOfConsumers == 0) {
+                consumedEnergy = 0;
+            }
             numberOfConsumers = numberOfConsumers + 1;
 
-            if(_pastEnergy < 0){
+            if(_pastEnergy <= 0){
                 updateDemandEnergy(-_newEnergy, -_pastEnergy);
             }
-            else if(_pastEnergy>0){
+            else if(_pastEnergy > 0){
                 updateAvailableEnergy(0, _pastEnergy);
-                updateDemandEnergy(-_newEnergy,0);
-            }
-            else{
                 updateDemandEnergy(-_newEnergy,0);
             }
             emit MyEvent(1);
@@ -57,14 +55,11 @@ contract p2p {
 
             numberOfProsumers = numberOfProsumers + 1;
 
-            if(_pastEnergy > 0){
+            if(_pastEnergy >= 0){
                 updateAvailableEnergy(_newEnergy, _pastEnergy);
             }
             else if(_pastEnergy < 0){
                 updateDemandEnergy(0, -_pastEnergy);
-                updateAvailableEnergy(_newEnergy,0);
-            }
-            else{
                 updateAvailableEnergy(_newEnergy,0);
             }
             emit MyEvent(2);
@@ -73,15 +68,21 @@ contract p2p {
 
     function deductProsumer() public {
         numberOfProsumers = numberOfProsumers - 1;
+
+        if(numberOfProsumers == 0){
+            maxBalanceForThisCycle = 0;
+            consumedEnergy = 0;
+        }
     }
 
     function prosumer(address payable _user, int _injectedEnergy) public {
-        uint part = getPercentage(_injectedEnergy);
+        numberOfProsumers = numberOfProsumers - 1;
+        int part = getPercentage(_injectedEnergy);
         emit MyEvent(part*maxBalanceForThisCycle);
         sendEther(_user, part*maxBalanceForThisCycle);
     }
 
-    function getMaxBalanceForThisCycle() public view returns (uint){
+    function getMaxBalanceForThisCycle() public view returns (int){
         return maxBalanceForThisCycle;
     }
 
@@ -102,14 +103,13 @@ contract p2p {
         return address(this).balance;
     }
 
-    function getPercentage(int _energyInjected) public view returns (uint){
-        return (uint(_energyInjected/availableEnergy));
+    function getPercentage(int _energyInjected) public view returns (int){
+        return (int((_energyInjected*100)/availableEnergy));
     }
 
-    function sendEther(address payable recipient, uint _amount) public payable {
+    function sendEther(address payable recipient, int _amount) public payable {
         uint toSend = uint(_amount);
-        recipient.call.value(toSend)('');
-        numberOfProsumers = numberOfProsumers - 1;
+        recipient.call.value(toSend/100)('');
 
         if(numberOfProsumers == 0){
             maxBalanceForThisCycle = 0;
@@ -122,11 +122,11 @@ contract p2p {
         if( ((availableEnergy - consumedEnergy) > 0) && (numberOfProsumers > 0)){
             if( (availableEnergy/numberOfConsumers) >= -_consumeEnergy ){
                 consumedEnergy = consumedEnergy - _consumeEnergy;
-                emit MyEvent(uint(-_consumeEnergy));
+                emit MyEvent(int(-_consumeEnergy));
             }
             else {
                 consumedEnergy = consumedEnergy + (availableEnergy/numberOfConsumers);
-                emit MyEvent(uint(availableEnergy/numberOfConsumers));
+                emit MyEvent(int(availableEnergy/numberOfConsumers));
             }
         }
         else{
@@ -157,9 +157,9 @@ contract p2p {
         return demandEnergy;
     }
 
-    function deposit(int _enough, uint _amount) payable public {
+    function deposit(int _enough, int _amount) payable public {
         maxBalanceForThisCycle = maxBalanceForThisCycle + _amount;
-        require(msg.value == _amount);
+        require(msg.value == uint(_amount));
         if(_enough == 1){
             numberOfConsumers = numberOfConsumers - 1;
         }
