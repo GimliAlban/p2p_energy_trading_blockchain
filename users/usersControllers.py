@@ -18,59 +18,46 @@ def getValueFromEmonPi():
     return inc_value.json()
 
 
-def prosumerOrConsumer(energy):
-    if (energy < 0):
-        return 1
-    if (energy >= 0):
-        return 2
-
-
 def updateEnergy(newEnergy, pastEnergy):
-    tx_hash = contract.functions.updateEnergy(newEnergy, pastEnergy).transact()
-    receipt = web3.eth.waitForTransactionReceipt(tx_hash)
-    case = int(receipt['logs'][0]['data'], 16)
-    return case
+    return contractControllers.updateEnergy(newEnergy, pastEnergy)
 
 
 def transaction(userAddress, case, energy):
+    # Wait for everyone to upload their respective values in the smart contract
     time.sleep(5)
     if(case == 1):
-        print('_________________________________________')
         print('Consumer Case')
         stop = 0
         while stop == 0:
-            tx_hash = contract.functions.consumer(
-                userAddress, energy).transact()
-            receipt = web3.eth.waitForTransactionReceipt(tx_hash)
-            # print(receipt['logs'][0]['data'])
-            energyReceive = int(receipt['logs'][0]['data'], 16)
-            print('Energy receive from the pull ' + str(energyReceive))
+            energyReceive = contractControllers.consumer(userAddress, energy)
             if(energyReceive == 0):
                 stop = 1
-                print('There is no available energy.')
+                print('There is no Available energy in the system.')
                 break
             if(energyReceive >= energy):
-                contract.functions.deposit(1, abs(energyReceive) * 1000000000000).transact({	'to': address,
-                                                                                             'from': userAddress,
-                                                                                             'value': abs(energyReceive) * 1000000000000
-                                                                                             })
+                print('Energy receive from the pull: ' + str(energyReceive) + 'kW')
+                contractControllers.deposit(userAddress, energyReceive)
                 stop = 1
             else:
-                time.sleep(3)
+                print('Energy receive from the pull ' + str(energyReceive) +
+                      '.\nYou are know waiting to see if there is any available energy left in the pull.')
+                contractControllers.deposit(userAddress, energyReceive)
+                time.sleep(2)
 
     if(case == 2):
-        print('_________________________________________')
         print('Prosumer Case')
-        if(contractControllers.getNumberConsumer() != 0):
-            time.sleep(5)
-        if (contractControllers.getConsumedEnergy() > 0):
-            if (contractControllers.getNumberConsumer() != 0):
+        if(contractControllers.getDemandEnergy() != 0):
+            time.sleep(4)
+            if (contractControllers.getConsumedEnergy() > 0):
                 while (contractControllers.getNumberConsumer() != 0):
                     print('Wait till the end of energy allocation to consumer.')
-            tx_hash = contract.functions.prosumer(
-                userAddress, energy).transact()
-            receipt = web3.eth.waitForTransactionReceipt(tx_hash)
-            print(int(receipt['logs'][0]['data'], 16))
+                ethReceived = contractControllers.prosumer(userAddress, energy)
+                print('You receive ' + str(ethReceived) + ' wei.')
+            else:
+                contractControllers.deductProsumer()
+                print('There is no Consumed energy in the system.')
         else:
-            tx_hash = contract.functions.deductProsumer().transact()
-            receipt = web3.eth.waitForTransactionReceipt(tx_hash)
+            contractControllers.deductProsumer()
+            print('There is no Demand in the system.')
+
+    print('_________________________________________')

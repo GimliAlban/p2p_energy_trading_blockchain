@@ -7,12 +7,12 @@ import users.usersControllers as usersControllers
 from time import gmtime, strftime, sleep
 
 # Select the account number for the Ganache blockchain:
-web3.eth.defaultAccount = web3.eth.accounts[1]
+web3.eth.defaultAccount = web3.eth.accounts[2]
 
 pastEnergy = 0
 
 while True:
-    newEnergy = 75  # read value from emonPi
+    newEnergy = 25  # read value from emonPi
     thisTime = strftime("%Y-%m-%d %H:%M:%S", gmtime())
     if(((thisTime[-1] == '0') and ((thisTime[-2] == ('0')))) or ((thisTime[-1] == '0') and ((thisTime[-2] == ('3'))))):
         print(thisTime)

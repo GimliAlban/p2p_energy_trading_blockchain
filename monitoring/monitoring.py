@@ -11,13 +11,11 @@ web3.eth.defaultAccount = web3.eth.accounts[0]
 
 while True:
     # contract.functions.priceEnergy().transact()
-    newEnergy = usersControllers.getValueFromEmonPi()
     time.sleep(3)
     print('| Number of Prosumer in the cycle: ' +
           str(contractControllers.getNumberProsumer()))
     print('| Number of Consumer in the cycle: ' +
           str(contractControllers.getNumberConsumer()))
-    print('| Read value from emongcms website: ' + str(newEnergy['value']))
     print('| Available energy in the system: ' +
           str(contractControllers.getAvailableEnergy()))
     print('| Demand energy in the system: ' +
@@ -28,4 +26,3 @@ while True:
     print('| Smart contract balance: ' +
           str(contractControllers.getContractBalance()))
     print('|_________________________________________')
-    pastEnergy = newEnergy
